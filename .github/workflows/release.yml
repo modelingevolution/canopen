@@ -59,11 +59,16 @@ jobs:
         retention-days: 7
         path: ${{ env.NUGET_DIRECTORY }}/*.nupkg
     - name: Publish to NuGet.org
+      continue-on-error: true
       run: |
-        for file in ${{ env.NUGET_DIRECTORY }}/*.nupkg; do
-          dotnet nuget push "$file" --api-key ${{ secrets.NUGET_API_KEY }} \
-            --source https://api.nuget.org/v3/index.json --skip-duplicate
-        done
+        if [ -n "${{ secrets.NUGET_API_KEY }}" ]; then
+          for file in ${{ env.NUGET_DIRECTORY }}/*.nupkg; do
+            dotnet nuget push "$file" --api-key ${{ secrets.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
+        else
+          echo "::warning::NUGET_API_KEY not set on this repo — skipping NuGet.org publish. Set it: gh secret set NUGET_API_KEY -R modelingevolution/canopen"
+        fi
     - name: Publish to GitHub Packages
       run: |
         for file in ${{ env.NUGET_DIRECTORY }}/*.nupkg; do
