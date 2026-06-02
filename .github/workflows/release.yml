@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  NUGET_DIRECTORY: ${{ github.workspace }}/nuget
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    - name: Get version
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/v}
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    - name: Restore
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
+    - name: Pack
+      run: |
+        dotnet pack src/ModelingEvolution.CanOpen/ModelingEvolution.CanOpen.csproj \
+          --configuration Release \
+          /p:Version=${{ steps.version.outputs.VERSION }} \
+          /p:PackageReleaseNotes="See https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}" \
+          --output ${{ env.NUGET_DIRECTORY }}
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget
+        if-no-files-found: error
+        retention-days: 7
+        path: ${{ env.NUGET_DIRECTORY }}/*.nupkg
+    - name: Publish to NuGet.org
+      run: |
+        for file in ${{ env.NUGET_DIRECTORY }}/*.nupkg; do
+          dotnet nuget push "$file" --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json --skip-duplicate
+        done
+    - name: Publish to GitHub Packages
+      run: |
+        for file in ${{ env.NUGET_DIRECTORY }}/*.nupkg; do
+          dotnet nuget push "$file" --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
+        done
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: v${{ steps.version.outputs.VERSION }}
+        name: Release v${{ steps.version.outputs.VERSION }}
+        body: |
+          ## ModelingEvolution.CanOpen v${{ steps.version.outputs.VERSION }}
+
+          ### Installation
+          ```bash
+          dotnet add package ModelingEvolution.CanOpen --version ${{ steps.version.outputs.VERSION }}
+          ```
+        artifacts: ${{ env.NUGET_DIRECTORY }}/*.nupkg
+        draft: false
+        prerelease: false
+        allowUpdates: true
+        token: ${{ secrets.GITHUB_TOKEN }}

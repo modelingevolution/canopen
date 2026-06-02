@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ModelingEvolution.CanOpen/ModelingEvolution.CanOpen.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ModelingEvolution.CanOpen.Tests/ModelingEvolution.CanOpen.Tests.csproj" />
+  </Folder>
+</Solution>

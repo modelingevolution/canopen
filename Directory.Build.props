@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Package properties -->
+    <Authors>ModelingEvolution Team</Authors>
+    <Company>ModelingEvolution</Company>
+    <Product>ModelingEvolution.CanOpen</Product>
+    <Copyright>Copyright © 2026 ModelingEvolution</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/modelingevolution/canopen</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/modelingevolution/canopen</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>canopen;can;socketcan;sdo;pdo;nmt;fieldbus;industrial</PackageTags>
+    <Description>Layer-1 CANopen protocol client over Linux SocketCAN: NMT, expedited SDO, PDO mapping, object-dictionary addressing, and a cyclic RxPDO image with TxPDO on-change decode. Pure protocol — no device/vendor vocabulary.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+</Project>
