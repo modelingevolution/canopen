@@ -20,6 +20,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write   # Trusted Publishing: lets NuGet/login mint a 1-hour key
       contents: write
       packages: write
     steps:
@@ -58,12 +59,19 @@ jobs:
         if-no-files-found: error
         retention-days: 7
         path: ${{ env.NUGET_DIRECTORY }}/*.nupkg
+    - name: NuGet login (OIDC -> temporary API key)
+      # nuget.org Trusted Publishing: no long-lived key. The policy on nuget.org names this repo and this workflow
+      # file; `user` is the nuget.org username of the POLICY CREATOR (not the package owner / org).
+      id: nuget_login
+      uses: NuGet/login@v1
+      with:
+        user: rafal.maciag
     - name: Publish to NuGet.org
       continue-on-error: true
       run: |
-        if [ -n "${{ secrets.NUGET_API_KEY }}" ]; then
+        if [ -n "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" ]; then
           for file in ${{ env.NUGET_DIRECTORY }}/*.nupkg; do
-            dotnet nuget push "$file" --api-key ${{ secrets.NUGET_API_KEY }} \
+            dotnet nuget push "$file" --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} \
               --source https://api.nuget.org/v3/index.json --skip-duplicate
           done
         else
